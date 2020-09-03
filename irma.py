@@ -34,7 +34,8 @@ def irma_setup():
 
     return (t, wn, map_bg_img)
 
-
+#todo: add category number; change map location based on hurricane location
+# possibly interesting: scrape web and make csv files; scrape news articles for people affected
 def irma():
     """Animates the path of hurricane Irma
     """
@@ -42,19 +43,8 @@ def irma():
 
     # your code to animate Irma here
 
-    t.pendown()
-    t.pencolor("red")
-    #t.setpos(-100, -90)
-    #t.forward(10)
-
-    #print(t.heading())
-
-    t.setpos(-30, 17)
-    #t.right(math.degrees(math.atan(1)))
-    print(t.pos())
-    t.circle(10)
-
     t.radians()
+    t.speed('fast')
 
     # read file
     with open('data/irma.csv') as reader_obj:
@@ -64,20 +54,51 @@ def irma():
 
         t.setpos(float(start_pos[3]), float(start_pos[2]))
 
-        print(t.START_ORIENTATION)
+        t.left(math.radians(180))
 
         prev_pos = start_pos
         for row in csv_reader:
-            dx = float(row[3]) - float(prev_pos[3])
-            dy = float(row[2]) - float(prev_pos[2])
-            dist = math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
+            strength = float(row[4])
+            if strength >= 157:
+                t.pencolor("red")
+                t.pensize(5)
+            elif strength >= 130:
+                t.pencolor("orange")
+                t.pensize(4)
+            elif strength >= 111:
+                t.pencolor("yellow")
+                t.pensize(3)
+            elif strength >= 96:
+                t.pencolor("green")
+                t.pensize(2)
+            elif strength >= 74:
+                t.pencolor("blue")
+                t.pensize(1)
+            else:
+                t.pencolor("white")
+                t.pensize(0.5)
 
-            t.right(math.radians(270) - (math.atan(dy / dx)) + t.heading())
+            dlong = float(row[3]) - float(prev_pos[3])
+            dlat = float(row[2]) - float(prev_pos[2])
+            dist = math.sqrt(math.pow(dlong, 2) + math.pow(dlat, 2))
+
+            # moving vertically; only dlat has a value
+            if dlong == 0:
+                # moving straight down (south)
+                if dlat < 0:
+                    t.left(t.heading() + math.radians(180))
+                # moving north
+                else:
+                    t.left(t.heading())
+            # moving towards quad 2 and 3
+            elif dlong < 0:
+                t.right(math.radians(270) - math.atan(dlat / dlong) + t.heading() + math.radians(180))
+            # 'normal' movement to the right (since atan's range is 90 to -90)
+            else:
+                t.right(math.radians(270) - math.atan(dlat / dlong) + t.heading())
+
             t.forward(dist)
-            print(t.pos())
             prev_pos = row
-
-        print(t.pos())
 
 if __name__ == "__main__":
     irma()
